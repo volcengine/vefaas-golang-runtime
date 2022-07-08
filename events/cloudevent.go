@@ -20,6 +20,15 @@ import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 )
 
+// Supported CloudEvent types.
+const (
+	FaasTimerEvent    = "faas.timer.event"
+	FaasRocketMqEvent = "faas.rocketmq.event"
+	FaasBmqEvent      = "faas.bmq.event"
+	FaasKafkaEvent    = "faas.kafka.event"
+	FaasTosEvent      = "faas.tos.event"
+)
+
 // CloudEvent wraps cloudevents.
 type CloudEvent struct {
 	*cloudevents.Event
