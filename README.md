@@ -1,8 +1,6 @@
 # veFaaS Golang 运行时
 
-用于开发 veFaaS Golang 函数的 SDK 及代码样例。
-
-**注意：该项目处于内部测试阶段，API 行为可能会发生变更。**
+用于开发 veFaaS Golang 函数的 SDK 及代码样例，更多信息请参考 [Golang 函数开发指南](https://www.volcengine.com/docs/6662/106051)。
 
 ## 快速上手
 ```Golang
