@@ -27,6 +27,8 @@ const (
 	FaasBmqEvent      = "faas.bmq.event"
 	FaasKafkaEvent    = "faas.kafka.event"
 	FaasTosEvent      = "faas.tos.event"
+	FaasSnsEvent      = "faas.sns.event"
+	FaasTlsEvent      = "faas.tls.event"
 )
 
 // CloudEvent wraps cloudevents.
