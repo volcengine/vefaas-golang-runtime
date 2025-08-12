@@ -33,48 +33,107 @@ func handleCloudEvent(handler interface{}) func(rw http.ResponseWriter, rq *http
 		defer utils.RecoverFunc(rw, nil)
 
 		eventType := rq.Header.Get("X-Faas-Event-Type")
-		if eventType != events.EventTypeCloudEvent {
-			utils.SetInvalidEventTypeHeader(rw, eventType, events.EventTypeCloudEvent)
+		if eventType != events.EventTypeCloudEvent && eventType != events.EventTypeMultiCloudEvent {
+			utils.SetInvalidEventTypeHeader(rw, eventType, events.EventTypeCloudEvent, events.EventTypeMultiCloudEvent)
 			return
 		}
 
 		ctx := rq.Context()
 		ctx = vefaascontext.WithRequestIdContext(ctx, rq.Header.Get("X-Faas-Request-Id"))
 
-		msg := cehttp.NewMessageFromHttpRequest(rq)
-		event, err := binding.ToEvent(ctx, msg)
+		if eventType == events.EventTypeCloudEvent {
+			msg := cehttp.NewMessageFromHttpRequest(rq)
+			event, err := binding.ToEvent(ctx, msg)
+			if err != nil {
+				utils.SetInvalidCloudEventHeader(rw, err)
+				return
+			}
+
+			startTime := time.Now()
+			resp, err := functionHandler(ctx, &events.CloudEvent{Event: event})
+
+			utils.SetExecutionDurationHeader(rw, startTime)
+
+			if err != nil {
+				utils.SetFunctionExecutionErrorHeader(rw, err)
+				return
+			}
+			if resp == nil {
+				utils.SetFunctionNoResponseErrorHeader(rw)
+				return
+			}
+
+			if resp.Headers != nil {
+				for k, v := range resp.Headers {
+					rw.Header().Set(k, v)
+				}
+			}
+			// In case user set this response header, we rewrite it here.
+			utils.SetExecutionDurationHeader(rw, startTime)
+
+			if resp.StatusCode != 0 {
+				rw.WriteHeader(resp.StatusCode)
+			}
+			if resp.Body != nil {
+				_, _ = rw.Write(resp.Body)
+			}
+			return
+		}
+
+		// eventType == events.EventTypeMultiCloudEvent
+		// if the handler only can handle one event, and request is multi event, will do for-loop
+		rawBody, err := utils.RawBodyFromHttpRequest(rq)
 		if err != nil {
+			return
+		}
+		batchVersion := utils.GetBatchEventsVersionFromRequest(rq)
+		multiEvents, err := utils.TransformRawBodyToBatchCloudEvents(ctx, batchVersion, rawBody)
+		if err != nil || len(multiEvents) == 0 {
 			utils.SetInvalidCloudEventHeader(rw, err)
 			return
 		}
 
+		var res *events.EventResponse
+		existInvalidStatus := false
+		invalidStatus := 200
+
 		startTime := time.Now()
-		resp, err := functionHandler(ctx, &events.CloudEvent{Event: event})
+		for _, faasCloudEvent := range multiEvents {
+			res, err = functionHandler(ctx, faasCloudEvent)
+			utils.SetExecutionDurationHeader(rw, startTime)
 
-		utils.SetExecutionDurationHeader(rw, startTime)
+			if err != nil {
+				utils.SetFunctionExecutionErrorHeader(rw, err)
+				return
+			}
+			if res == nil {
+				utils.SetFunctionNoResponseErrorHeader(rw)
+				return
+			}
 
-		if err != nil {
-			utils.SetFunctionExecutionErrorHeader(rw, err)
-			return
+			//record invalid status
+			//but still call func to process other msgs
+			if res.StatusCode >= 400 {
+				existInvalidStatus = true
+				invalidStatus = res.StatusCode
+			}
 		}
-		if resp == nil {
-			utils.SetFunctionNoResponseErrorHeader(rw)
-			return
-		}
 
-		if resp.Headers != nil {
-			for k, v := range resp.Headers {
+		//will return last resp as the batch response
+		if res.Headers != nil {
+			for k, v := range res.Headers {
 				rw.Header().Set(k, v)
 			}
 		}
 		// In case user set this response header, we rewrite it here.
 		utils.SetExecutionDurationHeader(rw, startTime)
-
-		if resp.StatusCode != 0 {
-			rw.WriteHeader(resp.StatusCode)
+		if existInvalidStatus {
+			rw.WriteHeader(invalidStatus)
+		} else if res.StatusCode != 0 {
+			rw.WriteHeader(res.StatusCode)
 		}
-		if resp.Body != nil {
-			_, _ = rw.Write(resp.Body)
+		if res.Body != nil {
+			_, _ = rw.Write(res.Body)
 		}
 	}
 }

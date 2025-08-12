@@ -73,8 +73,20 @@ func handleAnyEvent(handler interface{}) func(rw http.ResponseWriter, rq *http.R
 				return
 			}
 			payload = &events.CloudEvent{Event: event}
+		case events.EventTypeMultiCloudEvent:
+			rawBody, err := utils.RawBodyFromHttpRequest(rq)
+			if err != nil {
+				return
+			}
+			batchVersion := utils.GetBatchEventsVersionFromRequest(rq)
+			es, err := utils.TransformRawBodyToBatchCloudEvents(ctx, batchVersion, rawBody)
+			if err != nil {
+				utils.SetInvalidCloudEventHeader(rw, err)
+				return
+			}
+			payload = es
 		default:
-			utils.SetInvalidEventTypeHeader(rw, eventType, events.EventTypeHTTP, events.EventTypeCloudEvent)
+			utils.SetInvalidEventTypeHeader(rw, eventType, events.EventTypeHTTP, events.EventTypeCloudEvent, events.EventTypeMultiCloudEvent)
 			return
 		}
 

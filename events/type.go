@@ -31,4 +31,7 @@ const (
 
 	// EventTypeCloudEvent represents trigger events (timer/kafka/rocketmq/tos/abase_binlog, etc)
 	EventTypeCloudEvent = "cloudevent"
+
+	// EventTypeMultiCloudEvent represents batch events. Useful for kafka/rocketmq
+	EventTypeMultiCloudEvent = "multi-cloudevent"
 )
