@@ -39,7 +39,10 @@ func handleCloudEvent(handler interface{}) func(rw http.ResponseWriter, rq *http
 		}
 
 		ctx := rq.Context()
-		ctx = vefaascontext.WithRequestIdContext(ctx, rq.Header.Get("X-Faas-Request-Id"))
+		ctx = vefaascontext.WithRequestIdContext(ctx, rq)
+		ctx = vefaascontext.WithAccessKeyIdContext(ctx, rq)
+		ctx = vefaascontext.WithSecretAccessKeyContext(ctx, rq)
+		ctx = vefaascontext.WithSessionTokenContext(ctx, rq)
 
 		msg := cehttp.NewMessageFromHttpRequest(rq)
 		event, err := binding.ToEvent(ctx, msg)

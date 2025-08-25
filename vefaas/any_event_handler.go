@@ -34,7 +34,10 @@ func handleAnyEvent(handler interface{}) func(rw http.ResponseWriter, rq *http.R
 		defer utils.RecoverFunc(rw, nil)
 
 		ctx := rq.Context()
-		ctx = vefaascontext.WithRequestIdContext(ctx, rq.Header.Get("X-Faas-Request-Id"))
+		ctx = vefaascontext.WithRequestIdContext(ctx, rq)
+		ctx = vefaascontext.WithAccessKeyIdContext(ctx, rq)
+		ctx = vefaascontext.WithSecretAccessKeyContext(ctx, rq)
+		ctx = vefaascontext.WithSessionTokenContext(ctx, rq)
 
 		remoteAddr := rq.RemoteAddr
 		remoteIP := rq.Header.Get("X-Real-Ip")

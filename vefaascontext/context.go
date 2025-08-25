@@ -18,23 +18,76 @@ package vefaascontext
 
 import (
 	"context"
+	"net/http"
+)
+
+const (
+	requestIdHeader       = "X-Faas-Request-Id"
+	accessKeyIdHeader     = "X-Faas-Access-Key-Id"
+	secretAccessKeyHeader = "X-Faas-Secret-Access-Key"
+	sessionTokenHeader    = "X-Faas-Session-Token"
 )
 
 type contextKey int
 
 const (
 	requestIdContextKey contextKey = iota
+	accessKeyIdContextKey
+	secretAccessKeyContextKey
+	sessionTokenContextKey
 )
 
 // WithRequestIdContext stores request id into context.
-func WithRequestIdContext(ctx context.Context, id string) context.Context {
-	return context.WithValue(ctx, requestIdContextKey, id)
+func WithRequestIdContext(ctx context.Context, req *http.Request) context.Context {
+	return context.WithValue(ctx, requestIdContextKey, req.Header.Get(requestIdHeader))
 }
 
 // RequestIdFromContext retrieves request id from context.
 func RequestIdFromContext(ctx context.Context) (id string) {
 	if ctx != nil {
 		id, _ = ctx.Value(requestIdContextKey).(string)
+	}
+
+	return
+}
+
+// WithAccessKeyIdContext stores access key id into context.
+func WithAccessKeyIdContext(ctx context.Context, req *http.Request) context.Context {
+	return context.WithValue(ctx, accessKeyIdContextKey, req.Header.Get(accessKeyIdHeader))
+}
+
+// AccessKeyIdFromContext retrieves access key id from context.
+func AccessKeyIdFromContext(ctx context.Context) (id string) {
+	if ctx != nil {
+		id, _ = ctx.Value(accessKeyIdContextKey).(string)
+	}
+
+	return
+}
+
+// WithSecretAccessKeyContext stores secret access key into context.
+func WithSecretAccessKeyContext(ctx context.Context, req *http.Request) context.Context {
+	return context.WithValue(ctx, secretAccessKeyContextKey, req.Header.Get(secretAccessKeyHeader))
+}
+
+// SecretAccessKeyFromContext retrieves secret access key from context.
+func SecretAccessKeyFromContext(ctx context.Context) (id string) {
+	if ctx != nil {
+		id, _ = ctx.Value(secretAccessKeyContextKey).(string)
+	}
+
+	return
+}
+
+// WithSessionTokenContext stores session token into context.
+func WithSessionTokenContext(ctx context.Context, req *http.Request) context.Context {
+	return context.WithValue(ctx, sessionTokenContextKey, req.Header.Get(sessionTokenHeader))
+}
+
+// SessionTokenFromContext retrieves session token from context.
+func SessionTokenFromContext(ctx context.Context) (id string) {
+	if ctx != nil {
+		id, _ = ctx.Value(sessionTokenContextKey).(string)
 	}
 
 	return
