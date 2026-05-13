@@ -66,3 +66,7 @@ go build -o main
 - 编译后的二进制文件须为命名为 main 的、可在 Linux 环境 amd64 架构下执行的二进制文件
 - 打包后的 main 须位于 .zip 文件的根目录下，不能嵌套在其它文件夹下
 - 如果主程序的执行依赖其它本地文件，如 config.yaml，在打包 .zip 文件时，这些文件依赖要一同打包，代码中通过相对位置来进行引用
+
+## Security and privacy
+This project takes security seriously.
+For vulnerability reporting and supported versions, see [SECURITY.md](SECURITY.md)
